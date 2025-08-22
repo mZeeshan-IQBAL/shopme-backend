@@ -9,6 +9,8 @@ const mongoose = require("mongoose");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+
 // ======================
 // MongoDB Connection
 // ======================
@@ -81,14 +83,10 @@ app.use((req, res) => {
 // ======================
 // Start Server
 // ======================
-app.listen(PORT, () => {
-  console.log(`✅ Server is running at http://localhost:${PORT}`);
-  console.log(`📦 Products API: http://localhost:${PORT}/api/products`);
-  console.log(`👕 Top Products API: http://localhost:${PORT}/api/top-products`);
-  console.log(
-    `🖼️  Uploads: http://localhost:${PORT}/uploads/shirt/shirt.png (example)`
-  );
-
-  console.log("📧 Email User:", process.env.EMAIL_USER);
-  console.log("🔑 Email Password Loaded:", !!process.env.EMAIL_PASS);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ Server is running at http://0.0.0.0:${PORT}`);
+  console.log(`📦 Products API: /api/products`);
+  console.log(`👕 Top Products API: /api/top-products`);
+  console.log(`🖼️ Uploads: /uploads/shirt/shirt.png (example)`);
 });
+
