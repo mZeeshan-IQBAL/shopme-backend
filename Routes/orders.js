@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const Order = require('../models/Order'); // ✅ Import the Order model
+const Order = require('../Models/Order'); // ✅ Import the Order model
 
 require('dotenv').config();
 
