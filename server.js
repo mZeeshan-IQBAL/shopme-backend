@@ -69,11 +69,13 @@ app.get("/", (req, res) => {
 // ======================
 // 404 Handler - Catch All
 // ======================
-app.use("*", (req, res) => {
+// 404 handler (safe for Express 5 + Railway)
+app.use((req, res) => {
   res.status(404).json({
     message: "Route not found. Check /api/products or /api/top-products",
   });
 });
+
 
 
 // ======================
