@@ -22,7 +22,7 @@ mongoose
 // ======================
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CLIENT_URL || "*", // ✅ Allow frontend on Railway or fallback
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
@@ -38,8 +38,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // ======================
 // API Routes
 // ======================
-
-
 app.use('/api/products', require('./Routes/products'));
 app.use('/api/top-products', require('./Routes/topProducts'));
 app.use('/api/orders', require('./Routes/orders'));
@@ -67,9 +65,9 @@ app.get('/', (req, res) => {
 });
 
 // ======================
-// 404 Handler - Use '*' for catch-all
+// 404 Handler - Catch All
 // ======================
-app.use('', (req, res) => {
+app.use('*', (req, res) => {
   res.status(404).json({ 
     message: "Route not found. Check /api/products or /api/top-products" 
   });
@@ -84,7 +82,6 @@ app.listen(PORT, () => {
   console.log(`👕 Top Products API: http://localhost:${PORT}/api/top-products`);
   console.log(`🖼️  Uploads: http://localhost:${PORT}/uploads/shirt/shirt.png (example)`);
 
-  // ✅ Log email only if used
   console.log("📧 Email User:", process.env.EMAIL_USER);
   console.log("🔑 Email Password Loaded:", !!process.env.EMAIL_PASS);
 });
