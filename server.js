@@ -25,7 +25,7 @@ mongoose
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "*", // ✅ Allow frontend on Railway or fallback
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type"],
   })
 );
@@ -69,11 +69,12 @@ app.get("/", (req, res) => {
 // ======================
 // 404 Handler - Catch All
 // ======================
-app.use("", (req, res) => {
+app.use("*", (req, res) => {
   res.status(404).json({
     message: "Route not found. Check /api/products or /api/top-products",
   });
 });
+
 
 // ======================
 // Start Server
