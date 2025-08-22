@@ -1,10 +1,10 @@
-// server.js 
-require('dotenv').config(); // ✅ Load .env at the top
+// server.js
+require("dotenv").config(); // ✅ Load .env at the top
 
-const express = require('express');
-const path = require('path');
-const cors = require('cors');
-const mongoose = require('mongoose');
+const express = require("express");
+const path = require("path");
+const cors = require("cors");
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,10 +13,12 @@ const PORT = process.env.PORT || 3000;
 // MongoDB Connection
 // ======================
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ DB connection error:", err));
-
 // ======================
 // Middleware
 // ======================
@@ -33,19 +35,19 @@ app.use(express.json());
 // ======================
 // Serve Static Files
 // ======================
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ======================
 // API Routes
 // ======================
-app.use('/api/products', require('./Routes/products'));
-app.use('/api/top-products', require('./Routes/topProducts'));
-app.use('/api/orders', require('./Routes/orders'));
+app.use("/api/products", require("./Routes/products"));
+app.use("/api/top-products", require("./Routes/topProducts"));
+app.use("/api/orders", require("./Routes/orders"));
 
 // ======================
 // Health Check / Home Route
 // ======================
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.send(`
     <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
       <h1>🛍️ Fashion Store Backend</h1>
@@ -67,9 +69,9 @@ app.get('/', (req, res) => {
 // ======================
 // 404 Handler - Catch All
 // ======================
-app.use('', (req, res) => {
-  res.status(404).json({ 
-    message: "Route not found. Check /api/products or /api/top-products" 
+app.use("", (req, res) => {
+  res.status(404).json({
+    message: "Route not found. Check /api/products or /api/top-products",
   });
 });
 
@@ -80,7 +82,9 @@ app.listen(PORT, () => {
   console.log(`✅ Server is running at http://localhost:${PORT}`);
   console.log(`📦 Products API: http://localhost:${PORT}/api/products`);
   console.log(`👕 Top Products API: http://localhost:${PORT}/api/top-products`);
-  console.log(`🖼️  Uploads: http://localhost:${PORT}/uploads/shirt/shirt.png (example)`);
+  console.log(
+    `🖼️  Uploads: http://localhost:${PORT}/uploads/shirt/shirt.png (example)`
+  );
 
   console.log("📧 Email User:", process.env.EMAIL_USER);
   console.log("🔑 Email Password Loaded:", !!process.env.EMAIL_PASS);
