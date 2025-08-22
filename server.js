@@ -42,9 +42,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // ======================
 // API Routes
 // ======================
-app.use("/api/products", require("./Routes/products"));
-app.use("/api/top-products", require("./Routes/topProducts"));
-app.use("/api/orders", require("./Routes/orders"));
+app.use("/api/products", require("./routes/products"));
+app.use("/api/top-products", require("./routes/topProducts"));
+app.use("/api/orders", require("./routes/orders"));
 
 // ======================
 // Health Check / Home Route
