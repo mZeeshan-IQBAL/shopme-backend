@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
 // ======================
 // 404 Handler - Use '*' for catch-all
 // ======================
-app.all('*', (req, res) => {
+app.use('', (req, res) => {
   res.status(404).json({ 
     message: "Route not found. Check /api/products or /api/top-products" 
   });
