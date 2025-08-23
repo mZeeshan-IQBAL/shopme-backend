@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 // MongoDB Connection
 // ======================
 mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ DB connection error:", err));
 
@@ -109,7 +109,9 @@ app.use((req, res) => {
 // ======================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.stack);
-  res.status(500).json({ message: "Something went wrong!", error: err.message });
+  res
+    .status(500)
+    .json({ message: "Something went wrong!", error: err.message });
 });
 
 // ======================
