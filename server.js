@@ -1,11 +1,6 @@
 // server.js
 require("dotenv").config(); // ✅ Load .env first
 
-console.log("🔧 ENV DEBUG:");
-console.log("  CLIENT_URL:", process.env.CLIENT_URL);
-console.log("  NODE_ENV:", process.env.NODE_ENV);
-console.log("  PORT:", process.env.PORT);
-
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
