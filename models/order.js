@@ -42,4 +42,4 @@ const orderSchema = new mongoose.Schema(
 // Optional: Add index for faster queries
 orderSchema.index({ email: 1, createdAt: -1 });
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model('order', orderSchema);

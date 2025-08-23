@@ -10,4 +10,4 @@ const productSchema = new mongoose.Schema({
   aosDelay: { type: String }, // optional
 });
 
-module.exports = mongoose.model("Product", productSchema);
+module.exports = mongoose.model("product", productSchema);
