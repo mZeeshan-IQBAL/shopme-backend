@@ -25,23 +25,30 @@ mongoose
 // ======================
 // Middleware
 // ======================
-const allowedOrigins = [
-  "http://localhost:5173", // local dev
-  "https://shopme-frontend-zeta.vercel.app", // Vercel frontend
-];
+// Use CLIENT_URL from .env if available, otherwise fallback to hardcoded list
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(",").map((url) => url.trim())
+  : [
+      "http://localhost:5173", // Vite dev server
+      "http://localhost:3000", // React dev server
+    ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow curl / mobile apps
+      // Allow requests without origin (e.g., curl, mobile apps, tests)
+      if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
+      } else {
+        console.log("❌ Blocked by CORS: ", origin);
+        return callback(new Error("Not allowed by CORS policy"), false);
       }
-      return callback(new Error("CORS policy: Not allowed by server"), false);
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    credentials: true, // Enable if using cookies/sessions
   })
 );
 
@@ -97,9 +104,7 @@ app.use((req, res) => {
 // ======================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.stack);
-  res
-    .status(500)
-    .json({ message: "Something went wrong!", error: err.message });
+  res.status(500).json({ message: "Something went wrong!", error: err.message });
 });
 
 // ======================
@@ -111,4 +116,5 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`👕 Top Products API: /api/top-products`);
   console.log(`🧾 Orders API: /api/orders`);
   console.log(`🖼️ Uploads: /uploads/shirt/shirt.png (example)`);
+  console.log(`🌐 Allowed Origins: ${allowedOrigins.join(", ")}`);
 });
