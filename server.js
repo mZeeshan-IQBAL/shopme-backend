@@ -21,6 +21,8 @@ mongoose
 // Middleware
 // ======================
 // Use CLIENT_URL from .env if available, otherwise fallback to hardcoded list
+console.log("🔧 DEBUG: process.env.CLIENT_URL =", process.env.CLIENT_URL); // ← ADD THIS
+
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(",").map((url) => url.trim())
   : [
