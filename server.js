@@ -33,6 +33,11 @@ const allowedOrigins = process.env.CLIENT_URL
 app.use(
   cors({
     origin: function (origin, callback) {
+      console.log("🔍 CORS Debug:");
+      console.log("   Request Origin:", origin);
+      console.log("   Allowed Origins:", allowedOrigins);
+      console.log("   Is Allowed?", allowedOrigins.includes(origin));
+
       // Allow requests without origin (e.g., curl, mobile apps, tests)
       if (!origin) return callback(null, true);
 
@@ -45,10 +50,9 @@ app.use(
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // Enable if using cookies/sessions
+    credentials: true,
   })
 );
-
 app.use(express.json());
 
 // ======================
