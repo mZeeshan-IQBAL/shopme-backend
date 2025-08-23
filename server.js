@@ -20,12 +20,23 @@ mongoose
 // ======================
 // Middleware
 // ======================
+const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  "https://shopme-frontend-zeta.vercel.app", // Vercel frontend
+];
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*", // ✅ Allow only frontend in production
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // allow curl / mobile apps
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS policy: Not allowed by server"), false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // ✅ Allow cookies / auth headers
+    credentials: true,
   })
 );
 
@@ -71,7 +82,8 @@ app.get("/", (req, res) => {
 // ======================
 app.use((req, res) => {
   res.status(404).json({
-    message: "Route not found. Check /api/products, /api/top-products, or /api/orders",
+    message:
+      "Route not found. Check /api/products, /api/top-products, or /api/orders",
   });
 });
 
@@ -80,7 +92,9 @@ app.use((req, res) => {
 // ======================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.stack);
-  res.status(500).json({ message: "Something went wrong!", error: err.message });
+  res
+    .status(500)
+    .json({ message: "Something went wrong!", error: err.message });
 });
 
 // ======================
