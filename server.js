@@ -59,6 +59,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/top-products", require("./routes/topProducts"));
 app.use("/api/orders", require("./routes/orders"));
+app.use('/api/admin', require('./routes/auth'));
 
 // ======================
 // Health Check / Root
