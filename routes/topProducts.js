@@ -3,7 +3,9 @@ const express = require('express');
 const router = express.Router();
 const TopProduct = require('../models/topProduct');
 const { upload, uploadToCloudinary } = require('../middleware/upload');
+const { protect } = require('../middleware/auth'); // ✅ Import protect
 
+// GET all top products - Public
 router.get('/', async (req, res) => {
   try {
     const products = await TopProduct.find();
@@ -13,7 +15,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', upload.single('image'), async (req, res) => {
+// POST new top product - Protected
+router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
     const imageUrl = await uploadToCloudinary(req.file.path);
 
@@ -34,7 +37,8 @@ router.post('/', upload.single('image'), async (req, res) => {
   }
 });
 
-router.put('/:id', upload.single('image'), async (req, res) => {
+// PUT update top product - Protected
+router.put('/:id', protect, upload.single('image'), async (req, res) => {
   try {
     let imageUrl = req.body.img;
     if (req.file) {
@@ -61,7 +65,8 @@ router.put('/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// DELETE top product - Protected
+router.delete('/:id', protect, async (req, res) => {
   try {
     const deleted = await TopProduct.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'TopProduct not found' });
