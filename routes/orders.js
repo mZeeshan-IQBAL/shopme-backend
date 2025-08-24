@@ -2,7 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const Order = require('../models/order'); // ✅ Import the Order model
+const Order = require('../models/order');
+const { protect } = require('../middleware/auth');
 
 require('dotenv').config();
 
@@ -14,18 +15,24 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// POST: Place new order (Public)
 router.post('/', async (req, res) => {
   const { name, email, address, items } = req.body;
 
-  // Validate required fields
-  if (!name || !email || !address || !items || items.length === 0) {
-    return res.status(400).json({ message: 'Missing required fields' });
+  if (!name || !email || !address || !items || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ message: 'Missing or invalid required fields' });
   }
 
-  // Calculate total price
+  // Validate each item
+  for (const item of items) {
+    if (!item.id || !item.title || !item.price || !item.quantity || !item.img) {
+      return res.status(400).json({ message: 'Invalid item in cart' });
+    }
+  }
+
   const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // ✅ Send confirmation email
+  // Send confirmation email
   try {
     await transporter.sendMail({
       from: '"ShopMe" <zeshansos510@gmail.com>',
@@ -42,19 +49,12 @@ router.post('/', async (req, res) => {
     console.log("✅ Email sent successfully");
   } catch (err) {
     console.error("📧 Email error:", err);
-    // Continue even if email fails (optional)
+    // Proceed anyway
   }
 
-  // ✅ Save order to MongoDB
+  // Save to DB
   try {
-    const order = new Order({
-      name,
-      email,
-      address,
-      items,
-      totalPrice,
-    });
-
+    const order = new Order({ name, email, address, items, totalPrice });
     const savedOrder = await order.save();
     console.log("📦 Order saved to DB:", savedOrder._id);
 
@@ -71,4 +71,14 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router ;
+// GET: All orders (Admin Only)
+router.get('/', protect, async (req, res) => {
+  try {
+    const orders = await Order.find().sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

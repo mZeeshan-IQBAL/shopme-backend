@@ -1,4 +1,4 @@
-// backend/models/Order.js
+// backend/models/order.js
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema(
@@ -33,13 +33,17 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    status: {
+      type: String,
+      enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+      default: 'pending'
+    }
   },
   {
-    timestamps: true, // adds createdAt & updatedAt
+    timestamps: true,
   }
 );
 
-// Optional: Add index for faster queries
 orderSchema.index({ email: 1, createdAt: -1 });
 
-module.exports = mongoose.model('order', orderSchema);
+module.exports = mongoose.model('Order', orderSchema);
