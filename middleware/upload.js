@@ -3,14 +3,18 @@ const path = require('path');
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
 
-// Setup Cloudinary
+// ===============================
+// Cloudinary Configuration
+// ===============================
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Multer: save uploaded files to 'uploads/' temporarily
+// ===============================
+// Multer Setup: Save to /uploads temp
+// ===============================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = 'uploads/';
@@ -27,16 +31,21 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Function to upload file to Cloudinary
+// ===============================
+// Function: Upload to Cloudinary
+// ===============================
 async function uploadToCloudinary(filePath) {
   try {
     const result = await cloudinary.uploader.upload(filePath, {
       folder: 'shopme-products'
     });
-    
-    // Don't delete file yet if reused
-    // fs.unlinkSync(filePath);
 
+    // ✅ Delete local file after upload
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    return result.secure_url; // ✅ Return Cloudinary hosted URL
   } catch (err) {
     throw new Error('Cloudinary upload failed: ' + err.message);
   }

@@ -6,7 +6,9 @@ const Product = require('../models/product');
 const { upload, uploadToCloudinary } = require('../middleware/upload');
 const { protect } = require('../middleware/auth'); // ✅ Import protect
 
+// ===============================
 // GET all products - Public
+// ===============================
 router.get('/', async (req, res) => {
   try {
     const products = await Product.find();
@@ -16,7 +18,9 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ===============================
 // GET single product - Public
+// ===============================
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -27,14 +31,21 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// ===============================
 // POST new product - Protected
+// ===============================
 router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
-    const imageUrl = await uploadToCloudinary(req.file.path);
+    let imageUrl = null;
+
+    // ✅ Only upload if image exists
+    if (req.file) {
+      imageUrl = await uploadToCloudinary(req.file.path);
+    }
 
     const newProduct = new Product({
       id: req.body.id,
-      img: imageUrl,
+      img: imageUrl, // ✅ Cloudinary URL
       title: req.body.title,
       rating: parseFloat(req.body.rating),
       color: req.body.color,
@@ -49,11 +60,14 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
   }
 });
 
+// ===============================
 // PUT update product - Protected
+// ===============================
 router.put('/:id', protect, upload.single('image'), async (req, res) => {
   try {
     let imageUrl = req.body.img;
 
+    // ✅ Replace with new Cloudinary image if uploaded
     if (req.file) {
       imageUrl = await uploadToCloudinary(req.file.path);
     }
@@ -78,7 +92,9 @@ router.put('/:id', protect, upload.single('image'), async (req, res) => {
   }
 });
 
+// ===============================
 // DELETE product - Protected
+// ===============================
 router.delete('/:id', protect, async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
