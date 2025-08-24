@@ -13,38 +13,30 @@ const PORT = process.env.PORT || 3000;
 // MongoDB Connection
 // ======================
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("✅ Connected to MongoDB Atlas"))
   .catch((err) => console.error("❌ DB connection error:", err));
 
 // ======================
 // Middleware
 // ======================
-// Use CLIENT_URL from .env if available, otherwise fallback to hardcoded list
-console.log("🔧 DEBUG: process.env.CLIENT_URL =", process.env.CLIENT_URL); // ← ADD THIS
-
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(",").map((url) => url.trim())
-  : [
-      "http://localhost:5173", // Vite dev server
-      "http://localhost:3000", // React dev server
-    ];
+  : ["http://localhost:5173", "http://localhost:3000"];
+
+console.log("🌐 Allowed Origins from .env/Default:", allowedOrigins);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      console.log("🔍 CORS Debug:");
-      console.log("   Request Origin:", origin);
-      console.log("   Allowed Origins:", allowedOrigins);
-      console.log("   Is Allowed?", allowedOrigins.includes(origin));
-
-      // Allow requests without origin (e.g., curl, mobile apps, tests)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
+      console.log("🔍 CORS Debug: Origin =", origin);
+      if (!origin || allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
-        console.log("❌ Blocked by CORS: ", origin);
+        console.log("❌ Blocked by CORS:", origin);
         return callback(new Error("Not allowed by CORS policy"), false);
       }
     },
@@ -53,10 +45,11 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(express.json());
 
 // ======================
-// Serve Static Files
+// Static Files
 // ======================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -68,12 +61,12 @@ app.use("/api/top-products", require("./routes/topProducts"));
 app.use("/api/orders", require("./routes/orders"));
 
 // ======================
-// Health Check / Home Route
+// Health & Home Routes
 // ======================
-// Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
+
 app.get("/", (req, res) => {
   res.send(`
     <div style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
@@ -95,33 +88,31 @@ app.get("/", (req, res) => {
 });
 
 // ======================
-// 404 Handler
+// 404 & Error Handlers
 // ======================
 app.use((req, res) => {
   res.status(404).json({
     message:
-      "Route not found. Check /api/products, /api/top-products, or /api/orders",
+      "Route not found. Try /api/products, /api/top-products, or /api/orders",
   });
 });
 
-// ======================
-// Global Error Handler
-// ======================
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.stack);
-  res
-    .status(500)
-    .json({ message: "Something went wrong!", error: err.message });
+  res.status(err.status || 500).json({
+    message: "Something went wrong!",
+    error: err.message,
+  });
 });
 
 // ======================
 // Start Server
 // ======================
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Server is running at http://0.0.0.0:${PORT}`);
+  console.log(`✅ Server running at http://0.0.0.0:${PORT}`);
   console.log(`📦 Products API: /api/products`);
   console.log(`👕 Top Products API: /api/top-products`);
   console.log(`🧾 Orders API: /api/orders`);
   console.log(`🖼️ Uploads: /uploads/shirt/shirt.png (example)`);
-  console.log(`🌐 Allowed Origins: ${allowedOrigins.join(", ")}`);
+  console.log(`🗄️ MongoDB Connected: ${process.env.MONGO_URI ? "Yes" : "No"}`);
 });
