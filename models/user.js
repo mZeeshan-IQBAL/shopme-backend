@@ -26,5 +26,12 @@ userSchema.methods.matchPassword = async function (password) {
   return result;
 };
 
+userSchema.methods.matchPassword = async function (password) {
+  console.log("🔍 matchPassword called with:", password);
+  const result = await bcrypt.compare(password, this.password);
+  console.log("📄 Stored hash:", this.password);
+  console.log("✅ Password match result:", result);
+  return result;
+};
 // ✅ MUST be at the end
 module.exports = mongoose.model('User', userSchema);
