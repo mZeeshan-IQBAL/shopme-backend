@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/product');
 const { upload, uploadToCloudinary } = require('../middleware/upload');
-const { protect } = require('../middleware/auth'); // ✅ Import protect
+const { protectAdmin } = require('../middleware/protectAdmin'); // ✅ Use protectAdmin
 
 // ===============================
 // GET all products - Public
@@ -35,13 +35,11 @@ router.get('/:id', async (req, res) => {
 });
 
 // ===============================
-// POST new product - Protected
+// POST new product - Admin Only
 // ===============================
-router.post('/', protect, upload.single('image'), async (req, res) => {
+router.post('/', protectAdmin, upload.single('image'), async (req, res) => {
   try {
     let imageUrl = null;
-
-    // ✅ Only upload if image exists
     if (req.file) {
       imageUrl = await uploadToCloudinary(req.file.path);
     }
@@ -64,16 +62,14 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
 });
 
 // ===============================
-// PUT update product by custom `id` - Protected
+// PUT update product by custom `id` - Admin Only
 // ===============================
-router.put('/:id', protect, upload.single('image'), async (req, res) => {
+router.put('/:id', protectAdmin, upload.single('image'), async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID format' });
 
     let imageUrl = req.body.img;
-
-    // ✅ Replace with new Cloudinary image if uploaded
     if (req.file) {
       imageUrl = await uploadToCloudinary(req.file.path);
     }
@@ -99,9 +95,9 @@ router.put('/:id', protect, upload.single('image'), async (req, res) => {
 });
 
 // ===============================
-// DELETE product by custom `id` - Protected
+// DELETE product by custom `id` - Admin Only
 // ===============================
-router.delete('/:id', protect, async (req, res) => {
+router.delete('/:id', protectAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ error: 'Invalid ID format' });
