@@ -18,7 +18,7 @@ mongoose
   .catch((err) => console.error("❌ DB connection error:", err));
 
 // ======================
-// CORS Setup (Single Block Only!)
+// CORS Setup
 // ======================
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(",").map((url) => url.trim())
@@ -29,9 +29,7 @@ console.log("🌐 Allowed Origins from .env/Default:", allowedOrigins);
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests without origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
-
+      if (!origin) return callback(null, true); // Allow Postman, curl, mobile apps
       if (allowedOrigins.includes(origin)) {
         console.log("✅ Allowed:", origin);
         callback(null, true);
@@ -46,7 +44,20 @@ app.use(
   })
 );
 
-app.use(express.json());
+// ======================
+// JSON Parser with Debug
+// ======================
+app.use(express.json({
+  verify: (req, res, buf) => {
+    try {
+      console.log("📥 Raw Body:", buf.toString());
+      JSON.parse(buf.toString()); // quick validation
+    } catch (err) {
+      console.error("❌ Invalid JSON detected:", buf.toString());
+      throw err; // will be caught by express error handler
+    }
+  }
+}));
 
 // ======================
 // Static Files
@@ -59,8 +70,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/top-products", require("./routes/topProducts"));
 app.use("/api/orders", require("./routes/orders"));
-app.use('/api/admin', require('./routes/auth'));        // Admin login (existing)
-app.use('/api/auth', require('./routes/auth'));        // Customer auth (new)
+app.use("/api/admin", require("./routes/auth"));   // Admin login
+app.use("/api/auth", require("./routes/auth"));    // Customer auth
 
 // ======================
 // Health Check / Root
@@ -78,13 +89,12 @@ app.get("/", (req, res) => {
 // ======================
 app.use((req, res) => {
   res.status(404).json({
-    message:
-      "Route not found. Check /api/products, /api/top-products, or /api/orders",
+    message: "Route not found. Check /api/products, /api/top-products, or /api/orders",
   });
 });
 
 app.use((err, req, res, next) => {
-  console.error("❌ Server Error:", err.stack);
+  console.error("❌ Server Error:", err.stack || err.message);
   res.status(500).json({ message: "Something went wrong!", error: err.message });
 });
 
