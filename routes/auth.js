@@ -101,39 +101,41 @@ router.post("/auth/register", async (req, res) => {
 // CUSTOMER LOGIN
 // POST /api/auth/login
 // ================================
-router.post("/auth/login", async (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("🔐 Login attempt for:", email);
-  console.log("📝 Input password:", password);
-
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
-  }
+  console.log("🔐 Login attempt:", { email, password }); // ✅ Log raw input
 
   try {
     const user = await User.findOne({ email });
-    console.log("🔍 Found user:", user ? "yes" : "no");
+    console.log("🔍 Found user:", !!user);
 
-    if (!user) return res.status(401).json({ error: "Invalid credentials" });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
     console.log("📄 Stored hash:", user.password);
     const isMatch = await user.matchPassword(password);
-    console.log("✅ Password match result:", isMatch);
+    console.log("✅ Password match result:", isMatch); // ✅ Critical log
 
-    if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
-    const token = jwt.sign({ id: user._id, role: "user" }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign({ id: user._id, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: "user" },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: 'user'
+      }
     });
   } catch (err) {
-    console.error("Login error:", err.message);
-    res.status(500).json({ error: "Server error during login" });
+    console.error('Login error:', err.message);
+    res.status(500).json({ error: 'Server error during login' });
   }
 });
 
