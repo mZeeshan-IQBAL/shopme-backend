@@ -1,7 +1,7 @@
 // backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
-const Admin = require('../models/Admin');  // For admin login
+const Admin = require('../models/admin');  // For admin login
 const User = require('../models/user');    // For customer auth
 const jwt = require('jsonwebtoken');
 
