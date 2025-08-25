@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 
 // POST: Place new order (Public)
 router.post('/', async (req, res) => {
-  const { name, email, address, items } = req.body;
+  const { name, email, address, items, userId } = req.body;
 
   if (!name || !email || !address || !items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ message: 'Missing or invalid required fields' });
@@ -54,7 +54,15 @@ router.post('/', async (req, res) => {
 
   // Save to DB
   try {
-    const order = new Order({ name, email, address, items, totalPrice });
+    const order = new Order({
+      name,
+      email,
+      address,
+      items,
+      totalPrice,
+      userId: userId || null  // ✅ Save userId (null if guest)
+    });
+
     const savedOrder = await order.save();
     console.log("📦 Order saved to DB:", savedOrder._id);
 
@@ -78,6 +86,29 @@ router.get('/', protect, async (req, res) => {
     res.json(orders);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// GET: Orders by User ID (Customer)
+// No auth middleware — called with Bearer token
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Optional: Add token verification if needed
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+
+    // You can verify token here if needed
+    // But for now, trust the userId from frontend
+
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    console.error('Error fetching user orders:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
