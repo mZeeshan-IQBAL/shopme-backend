@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const Order = require('../models/order');
-const { protect } = require('../middleware/auth');
+const { protectAdmin } = require('../middleware/protectAdmin');
+const { protectUser } = require('../middleware/protectUser');
 
 require('dotenv').config();
 
@@ -60,7 +61,7 @@ router.post('/', async (req, res) => {
       address,
       items,
       totalPrice,
-      userId: userId || null  // ✅ Save userId (null if guest)
+      userId: userId || null
     });
 
     const savedOrder = await order.save();
@@ -80,7 +81,7 @@ router.post('/', async (req, res) => {
 });
 
 // GET: All orders (Admin Only)
-router.get('/', protect, async (req, res) => {
+router.get('/', protectAdmin, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
@@ -89,20 +90,15 @@ router.get('/', protect, async (req, res) => {
   }
 });
 
-// GET: Orders by User ID (Customer)
-// No auth middleware — called with Bearer token
-router.get('/user/:userId', async (req, res) => {
+// GET: Orders by User ID (Customer Only)
+router.get('/user/:userId', protectUser, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Optional: Add token verification if needed
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ error: 'Access denied. No token provided.' });
+    // Ensure token user matches requested userId
+    if (req.user._id.toString() !== userId) {
+      return res.status(403).json({ error: 'Access denied. Cannot view another user’s orders.' });
     }
-
-    // You can verify token here if needed
-    // But for now, trust the userId from frontend
 
     const orders = await Order.find({ userId }).sort({ createdAt: -1 });
     res.json(orders);

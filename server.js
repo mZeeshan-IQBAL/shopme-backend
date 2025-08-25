@@ -70,9 +70,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/top-products", require("./routes/topProducts"));
 app.use("/api/orders", require("./routes/orders"));
-app.use("/api/admin", require("./routes/auth"));   // Admin login
-app.use("/api/auth", require("./routes/auth"));    // Customer auth
-
+// server.js
+app.use('/api/admin', require('./routes/adminAuth'));   // → /api/admin/login, /api/admin/me
+app.use('/api/auth', require('./routes/customerAuth')); // → /api/auth/register, /api/auth/login, /api/auth/me
 // ======================
 // Health Check / Root
 // ======================
