@@ -28,7 +28,7 @@ const isStrongPassword = (password) => {
 // ADMIN LOGIN
 // POST /api/admin/login
 // ================================
-router.post("/admin/login", async (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -57,7 +57,7 @@ router.post("/admin/login", async (req, res) => {
 // CUSTOMER REGISTRATION
 // POST /api/auth/register
 // ================================
-router.post("/auth/register", async (req, res) => {
+router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -104,7 +104,7 @@ router.post("/auth/register", async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("🔐 Login attempt:", { email, password }); // ✅ Log raw input
+  console.log("🔐 Login attempt:", { email, password });
 
   try {
     const user = await User.findOne({ email });
@@ -116,7 +116,7 @@ router.post('/login', async (req, res) => {
 
     console.log("📄 Stored hash:", user.password);
     const isMatch = await user.matchPassword(password);
-    console.log("✅ Password match result:", isMatch); // ✅ Critical log
+    console.log("✅ Password match result:", isMatch);
 
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
@@ -142,30 +142,29 @@ router.post('/login', async (req, res) => {
 // ================================
 // GET /api/auth/me - Get Current User
 // ================================
-router.get("/auth/me", async (req, res) => {
+router.get('/me', async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token)
-      return res.status(401).json({ error: "Access denied. No token provided." });
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
 
     const decoded = jwt.verify(token, JWT_SECRET);
     let user;
 
-    if (decoded.role === "admin") {
-      user = await Admin.findById(decoded.id).select("email");
-      if (user) return res.json({ id: user._id, email: user.email, role: "admin" });
+    if (decoded.role === 'admin') {
+      user = await Admin.findById(decoded.id).select('email');
+      if (user) return res.json({ id: user._id, email: user.email, role: 'admin' });
     } else {
-      user = await User.findById(decoded.id).select("-password");
-      if (user) return res.json({ ...user._doc, role: "user" });
+      user = await User.findById(decoded.id).select('-password');
+      if (user) return res.json({ ...user._doc, role: 'user' });
     }
 
-    return res.status(404).json({ error: "User not found" });
+    return res.status(404).json({ error: 'User not found' });
   } catch (err) {
-    if (err.name === "JsonWebTokenError") return res.status(401).json({ error: "Invalid token" });
-    if (err.name === "TokenExpiredError") return res.status(401).json({ error: "Token expired" });
+    if (err.name === 'JsonWebTokenError') return res.status(401).json({ error: 'Invalid token' });
+    if (err.name === 'TokenExpiredError') return res.status(401).json({ error: 'Token expired' });
 
-    console.error("Auth error:", err.message);
-    res.status(500).json({ error: "Server error" });
+    console.error('Auth error:', err.message);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
