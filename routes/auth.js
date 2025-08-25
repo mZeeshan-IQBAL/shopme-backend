@@ -5,8 +5,7 @@ const Admin = require("../models/admin");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "your-super-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-key-change-in-production";
 
 // Helper: Validate password strength
 const isStrongPassword = (password) => {
@@ -29,7 +28,7 @@ const isStrongPassword = (password) => {
 // ADMIN LOGIN
 // POST /api/admin/login
 // ================================
-router.post("/login", async (req, res) => {
+router.post("/admin/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -45,11 +44,7 @@ router.post("/login", async (req, res) => {
 
     res.json({
       token,
-      user: {
-        id: admin._id,
-        email: admin.email,
-        role: "admin",
-      },
+      user: { id: admin._id, email: admin.email, role: "admin" },
       message: "Admin login successful",
     });
   } catch (err) {
@@ -62,7 +57,7 @@ router.post("/login", async (req, res) => {
 // CUSTOMER REGISTRATION
 // POST /api/auth/register
 // ================================
-router.post("/register", async (req, res) => {
+router.post("/auth/register", async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -71,7 +66,6 @@ router.post("/register", async (req, res) => {
       .json({ error: "Name, email, and password are required" });
   }
 
-  // ✅ Validate password strength
   if (!isStrongPassword(password)) {
     return res.status(400).json({
       error:
@@ -95,12 +89,7 @@ router.post("/register", async (req, res) => {
 
     res.status(201).json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: "user",
-      },
+      user: { id: user._id, name: user.name, email: user.email, role: "user" },
     });
   } catch (err) {
     console.error("Registration error:", err.message);
@@ -112,8 +101,11 @@ router.post("/register", async (req, res) => {
 // CUSTOMER LOGIN
 // POST /api/auth/login
 // ================================
-router.post("/login", async (req, res) => {
+router.post("/auth/login", async (req, res) => {
   const { email, password } = req.body;
+
+  console.log("🔐 Login attempt for:", email);
+  console.log("📝 Input password:", password);
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
@@ -121,20 +113,15 @@ router.post("/login", async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
+    console.log("🔍 Found user:", user ? "yes" : "no");
 
-    // ✅ Add logs here
-    console.log("🔐 Comparing password for:", user.email);
+    if (!user) return res.status(401).json({ error: "Invalid credentials" });
+
     console.log("📄 Stored hash:", user.password);
-    console.log("📝 Input password:", password);
-
     const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-      console.log("❌ Password mismatch"); // ✅ Log failure
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
+    console.log("✅ Password match result:", isMatch);
+
+    if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
     const token = jwt.sign({ id: user._id, role: "user" }, JWT_SECRET, {
       expiresIn: "7d",
@@ -142,12 +129,7 @@ router.post("/login", async (req, res) => {
 
     res.json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: "user",
-      },
+      user: { id: user._id, name: user.name, email: user.email, role: "user" },
     });
   } catch (err) {
     console.error("Login error:", err.message);
@@ -155,89 +137,34 @@ router.post("/login", async (req, res) => {
   }
 });
 
-
-// POST /api/auth/login
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  console.log("🔐 Login attempt for:", email);
-  console.log("📝 Input password:", password);
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
-  }
-
-  try {
-    const user = await User.findOne({ email });
-    console.log("🔍 Found user:", user ? 'yes' : 'no');
-
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    console.log("📄 Stored hash:", user.password);
-    const isMatch = await user.matchPassword(password);
-    console.log("✅ Password match result:", isMatch);
-
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ id: user._id, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: 'user'
-      }
-    });
-  } catch (err) {
-    console.error('Login error:', err.message);
-    res.status(500).json({ error: 'Server error during login' });
-  }
-});
-
 // ================================
 // GET /api/auth/me - Get Current User
 // ================================
-router.get("/me", async (req, res) => {
+router.get("/auth/me", async (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token)
-      return res
-        .status(401)
-        .json({ error: "Access denied. No token provided." });
+      return res.status(401).json({ error: "Access denied. No token provided." });
 
     const decoded = jwt.verify(token, JWT_SECRET);
     let user;
 
     if (decoded.role === "admin") {
       user = await Admin.findById(decoded.id).select("email");
-      if (user) {
-        return res.json({ id: user._id, email: user.email, role: "admin" });
-      }
+      if (user) return res.json({ id: user._id, email: user.email, role: "admin" });
     } else {
       user = await User.findById(decoded.id).select("-password");
-      if (user) {
-        return res.json({ ...user._doc, role: "user" });
-      }
+      if (user) return res.json({ ...user._doc, role: "user" });
     }
 
     return res.status(404).json({ error: "User not found" });
   } catch (err) {
-    if (err.name === "JsonWebTokenError") {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-    if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ error: "Token expired" });
-    }
+    if (err.name === "JsonWebTokenError") return res.status(401).json({ error: "Invalid token" });
+    if (err.name === "TokenExpiredError") return res.status(401).json({ error: "Token expired" });
+
     console.error("Auth error:", err.message);
     res.status(500).json({ error: "Server error" });
   }
-}
-);
+});
 
 module.exports = router;
