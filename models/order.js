@@ -1,5 +1,5 @@
 // backend/models/order.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
@@ -12,13 +12,16 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
       lowercase: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+      match: [/^\S+@\S+\.\S+$/, "Please enter a valid email"],
     },
     address: {
       type: String,
       required: true,
       minlength: 10,
     },
+
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
     items: [
       {
         id: { type: Number, required: true },
@@ -35,9 +38,9 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
-      default: 'pending'
-    }
+      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
+      default: "pending",
+    },
   },
   {
     timestamps: true,
@@ -46,4 +49,4 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ email: 1, createdAt: -1 });
 
-module.exports = mongoose.model('Order', orderSchema);
+module.exports = mongoose.model("Order", orderSchema);

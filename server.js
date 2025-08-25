@@ -59,7 +59,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/top-products", require("./routes/topProducts"));
 app.use("/api/orders", require("./routes/orders"));
-app.use('/api/admin', require('./routes/auth'));
+app.use('/api/admin', require('./routes/auth'));        // Admin login (existing)
+app.use('/api/auth', require('./routes/auth'));        // Customer auth (new)
 
 // ======================
 // Health Check / Root
@@ -95,6 +96,8 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`📦 Products API: /api/products`);
   console.log(`👕 Top Products API: /api/top-products`);
   console.log(`🧾 Orders API: /api/orders`);
+  console.log(`🔐 Admin Login: /api/admin/login`);
+  console.log(`👤 Customer Auth: /api/auth/register, /api/auth/login`);
   console.log(`🖼️ Uploads: /uploads/shirt/shirt.png (example)`);
   console.log(`🌐 Allowed Origins: ${allowedOrigins.join(", ")}`);
 });
