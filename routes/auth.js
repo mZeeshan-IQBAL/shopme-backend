@@ -1,12 +1,28 @@
 // backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
-const Admin = require('../models/admin');  // For admin login
-const User = require('../models/user');    // For customer auth
+const Admin = require('../models/admin');
+const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 
-// JWT Secret (must be set in .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
+
+// Helper: Validate password strength
+const isStrongPassword = (password) => {
+  const minLength = 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+  return (
+    password.length >= minLength &&
+    hasUpperCase &&
+    hasLowerCase &&
+    hasNumbers &&
+    hasSpecialChar
+  );
+};
 
 // ================================
 // ADMIN LOGIN
@@ -16,18 +32,14 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Find admin by email
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Check password
     const isMatch = await admin.matchPassword(password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // Generate JWT token
     const token = jwt.sign({ id: admin._id, role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
 
-    // Respond with token and admin info
     res.json({
       token,
       user: {
@@ -50,25 +62,27 @@ router.post('/login', async (req, res) => {
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Validate input
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Name, email, and password are required' });
   }
 
+  // ✅ Validate password strength
+  if (!isStrongPassword(password)) {
+    return res.status(400).json({
+      error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character'
+    });
+  }
+
   try {
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Create new user
     const user = await User.create({ name, email, password });
 
-    // Generate JWT token
     const token = jwt.sign({ id: user._id, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
 
-    // Respond with token and user info
     res.status(201).json({
       token,
       user: {
@@ -91,28 +105,29 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Validate input
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
   try {
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Check password
+    // ✅ Add logs here
+    console.log("🔐 Comparing password for:", user.email);
+    console.log("📄 Stored hash:", user.password);
+    console.log("📝 Input password:", password);
+
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
+      console.log("❌ Password mismatch"); // ✅ Log failure
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate JWT token
     const token = jwt.sign({ id: user._id, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
 
-    // Respond with token and user info
     res.json({
       token,
       user: {
@@ -139,7 +154,6 @@ router.get('/me', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     let user;
 
-    // Check if admin or user
     if (decoded.role === 'admin') {
       user = await Admin.findById(decoded.id).select('email');
       if (user) {
