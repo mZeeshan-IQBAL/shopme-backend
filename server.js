@@ -38,7 +38,7 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // ✅ Added "PATCH"
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
@@ -51,10 +51,10 @@ app.use(express.json({
   verify: (req, res, buf) => {
     try {
       console.log("📥 Raw Body:", buf.toString());
-      JSON.parse(buf.toString()); // quick validation
+      JSON.parse(buf.toString());
     } catch (err) {
       console.error("❌ Invalid JSON detected:", buf.toString());
-      throw err; // will be caught by express error handler
+      throw err;
     }
   }
 }));
@@ -70,9 +70,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/top-products", require("./routes/topProducts"));
 app.use("/api/orders", require("./routes/orders"));
-// server.js
-app.use('/api/admin', require('./routes/adminAuth'));   // → /api/admin/login, /api/admin/me
-app.use('/api/auth', require('./routes/customerAuth')); // → /api/auth/register, /api/auth/login, /api/auth/me
+app.use('/api/admin', require('./routes/adminAuth'));
+app.use('/api/auth', require('./routes/customerAuth'));
+
 // ======================
 // Health Check / Root
 // ======================
