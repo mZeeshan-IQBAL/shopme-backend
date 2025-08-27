@@ -11,7 +11,6 @@ const { protectUser } = require('../middleware/protectUser');
 // ======================
 let transporter;
 
-// Only initialize transporter if credentials are set
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -21,16 +20,13 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     },
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // Use TLS
-    tls: {
-      rejectUnauthorized: true, // Prevent MITM attacks
-    },
+    secure: false,
+    tls: { rejectUnauthorized: true },
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 30000,
   });
 
-  // Verify transporter on startup
   transporter.verify((err, success) => {
     if (err) {
       console.warn("⚠️ Email transporter not ready:", err.message);
@@ -48,14 +44,12 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
 router.post('/', async (req, res) => {
   const { name, email, address, items, userId } = req.body;
 
-  // Validate required fields
   if (!name || !email || !address || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({
       message: 'Missing required fields: name, email, address, or valid items array'
     });
   }
 
-  // Validate each item
   for (const item of items) {
     if (!item.id || !item.title || !item.price || !item.quantity || !item.img) {
       return res.status(400).json({
@@ -71,7 +65,6 @@ router.post('/', async (req, res) => {
 
   const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // Send confirmation email (if configured)
   if (transporter) {
     try {
       await transporter.sendMail({
@@ -89,13 +82,11 @@ router.post('/', async (req, res) => {
       console.log("✅ Email sent successfully to", email);
     } catch (err) {
       console.error("📧 Failed to send email:", err.message);
-      // Continue — don't block order on email failure
     }
   } else {
     console.log("📧 Skipping email: transporter not configured");
   }
 
-  // Save order to database
   try {
     const order = new Order({
       name,
@@ -109,7 +100,6 @@ router.post('/', async (req, res) => {
     const savedOrder = await order.save();
     console.log("📦 Order saved to DB:", savedOrder._id);
 
-    // ✅ Success response
     return res.status(201).json({
       message: "Order placed and saved successfully!",
       orderId: savedOrder._id,
@@ -145,7 +135,6 @@ router.get('/user/:userId', protectUser, async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Ensure user can only access their own orders
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({
         error: 'Access denied. Cannot view another user’s orders.'
@@ -156,6 +145,26 @@ router.get('/user/:userId', protectUser, async (req, res) => {
     res.json(orders);
   } catch (err) {
     console.error("💾 Error fetching user orders:", err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ✅ NEW: GET: Orders by Email (Customer Only)
+router.get('/email/:email', protectUser, async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    // Ensure token user matches requested email
+    if (req.user.email !== email) {
+      return res.status(403).json({
+        error: 'Access denied. Cannot view another user’s orders.'
+      });
+    }
+
+    const orders = await Order.find({ email }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (err) {
+    console.error("💾 Error fetching user orders by email:", err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
