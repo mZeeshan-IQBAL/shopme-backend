@@ -1,10 +1,10 @@
 // backend/routes/orders.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const nodemailer = require('nodemailer');
-const Order = require('../models/order');
-const { protectAdmin } = require('../middleware/protectAdmin');
-const { protectUser } = require('../middleware/protectUser');
+const nodemailer = require("nodemailer");
+const Order = require("../models/order");
+const { protectAdmin } = require("../middleware/protectAdmin");
+const { protectUser } = require("../middleware/protectUser");
 
 // ======================
 // Nodemailer Setup
@@ -13,12 +13,12 @@ let transporter;
 
 if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
-    host: 'smtp.gmail.com',
+    host: "smtp.gmail.com",
     port: 587,
     secure: false,
     tls: { rejectUnauthorized: true },
@@ -41,29 +41,43 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
 // ======================
 // POST: Place new order
 // ======================
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   const { name, email, address, items, userId } = req.body;
 
-  if (!name || !email || !address || !Array.isArray(items) || items.length === 0) {
+  if (
+    !name ||
+    !email ||
+    !address ||
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
     return res.status(400).json({
-      message: 'Missing required fields: name, email, address, or valid items array'
+      message:
+        "Missing required fields: name, email, address, or valid items array",
     });
   }
 
   for (const item of items) {
     if (!item.id || !item.title || !item.price || !item.quantity || !item.img) {
       return res.status(400).json({
-        message: `Invalid item in cart: missing fields for item ID ${item.id}`
+        message: `Invalid item in cart: missing fields for item ID ${item.id}`,
       });
     }
-    if (typeof item.price !== 'number' || typeof item.quantity !== 'number' || item.quantity < 1) {
+    if (
+      typeof item.price !== "number" ||
+      typeof item.quantity !== "number" ||
+      item.quantity < 1
+    ) {
       return res.status(400).json({
-        message: `Invalid price or quantity for item: ${item.title}`
+        message: `Invalid price or quantity for item: ${item.title}`,
       });
     }
   }
 
-  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalPrice = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
 
   if (transporter) {
     try {
@@ -94,7 +108,7 @@ router.post('/', async (req, res) => {
       address,
       items,
       totalPrice,
-      userId: userId || null
+      userId: userId || null,
     });
 
     const savedOrder = await order.save();
@@ -103,14 +117,14 @@ router.post('/', async (req, res) => {
     return res.status(201).json({
       message: "Order placed and saved successfully!",
       orderId: savedOrder._id,
-      success: true
+      success: true,
     });
   } catch (dbError) {
     console.error("💾 DB save error:", dbError.message);
     return res.status(500).json({
       message: "Order failed to save in database",
       error: dbError.message,
-      success: false
+      success: false,
     });
   }
 });
@@ -118,7 +132,7 @@ router.post('/', async (req, res) => {
 // ======================
 // GET: All orders (Admin Only)
 // ======================
-router.get('/', protectAdmin, async (req, res) => {
+router.get("/", protectAdmin, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.json(orders);
@@ -131,13 +145,13 @@ router.get('/', protectAdmin, async (req, res) => {
 // ======================
 // GET: Orders by User ID (Customer Only)
 // ======================
-router.get('/user/:userId', protectUser, async (req, res) => {
+router.get("/user/:userId", protectUser, async (req, res) => {
   try {
     const { userId } = req.params;
 
     if (req.user._id.toString() !== userId) {
       return res.status(403).json({
-        error: 'Access denied. Cannot view another user’s orders.'
+        error: "Access denied. Cannot view another user’s orders.",
       });
     }
 
@@ -145,19 +159,19 @@ router.get('/user/:userId', protectUser, async (req, res) => {
     res.json(orders);
   } catch (err) {
     console.error("💾 Error fetching user orders:", err.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // ✅ NEW: GET: Orders by Email (Customer Only)
-router.get('/email/:email', protectUser, async (req, res) => {
+router.get("/email/:email", protectUser, async (req, res) => {
   try {
     const { email } = req.params;
 
     // Ensure token user matches requested email
     if (req.user.email !== email) {
       return res.status(403).json({
-        error: 'Access denied. Cannot view another user’s orders.'
+        error: "Access denied. Cannot view another user’s orders.",
       });
     }
 
@@ -165,19 +179,25 @@ router.get('/email/:email', protectUser, async (req, res) => {
     res.json(orders);
   } catch (err) {
     console.error("💾 Error fetching user orders by email:", err.message);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // ✅ NEW: PATCH: Update Order Status (Admin Only)
-router.patch('/:orderId/status', protectAdmin, async (req, res) => {
+router.patch("/:orderId/status", protectAdmin, async (req, res) => {
   const { orderId } = req.params;
   const { status } = req.body;
 
-  const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+  const validStatuses = [
+    "pending",
+    "confirmed",
+    "shipped",
+    "delivered",
+    "cancelled",
+  ];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
-      message: `Invalid status. Valid options: ${validStatuses.join(', ')}`
+      message: `Invalid status. Valid options: ${validStatuses.join(", ")}`,
     });
   }
 
@@ -189,7 +209,7 @@ router.patch('/:orderId/status', protectAdmin, async (req, res) => {
     );
 
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: "Order not found" });
     }
 
     // Optional: Send email to customer
@@ -212,10 +232,10 @@ router.patch('/:orderId/status', protectAdmin, async (req, res) => {
       }
     }
 
-    res.json({ message: 'Order status updated', order });
+    res.json({ message: "Order status updated", order });
   } catch (err) {
     console.error("Error updating order status:", err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
