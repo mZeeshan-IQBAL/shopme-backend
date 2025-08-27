@@ -169,4 +169,54 @@ router.get('/email/:email', protectUser, async (req, res) => {
   }
 });
 
+// ✅ NEW: PATCH: Update Order Status (Admin Only)
+router.patch('/:orderId/status', protectAdmin, async (req, res) => {
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({
+      message: `Invalid status. Valid options: ${validStatuses.join(', ')}`
+    });
+  }
+
+  try {
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Optional: Send email to customer
+    if (transporter) {
+      try {
+        await transporter.sendMail({
+          from: `"ShopMe" <${process.env.EMAIL_USER}>`,
+          to: order.email,
+          subject: `🚚 Order Status Updated: ${status}`,
+          html: `
+            <h2>Hello, ${order.name}!</h2>
+            <p>Your order status has been updated to: <strong>${status}</strong></p>
+            <p>Order ID: ${order._id}</p>
+            <p>Visit your profile for details.</p>
+          `,
+        });
+        console.log("📧 Status update email sent to", order.email);
+      } catch (emailErr) {
+        console.error("Failed to send status email:", emailErr.message);
+      }
+    }
+
+    res.json({ message: 'Order status updated', order });
+  } catch (err) {
+    console.error("Error updating order status:", err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

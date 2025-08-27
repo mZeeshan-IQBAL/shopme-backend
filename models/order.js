@@ -19,9 +19,7 @@ const orderSchema = new mongoose.Schema(
       required: true,
       minlength: 10,
     },
-
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-
     items: [
       {
         id: { type: Number, required: true },
