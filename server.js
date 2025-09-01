@@ -12,27 +12,10 @@ const PORT = process.env.PORT || 3000;
 // ======================
 // MongoDB Connection
 // ======================
-if (!process.env.MONGO_URI) {
-  console.error("❌ MONGO_URI environment variable is required!");
-  process.exit(1);
-}
-
 mongoose
-  .connect(process.env.MONGO_URI, {
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-    bufferMaxEntries: 0
-  })
-  .then(() => {
-    console.log("✅ Connected to MongoDB Atlas");
-    console.log("🔗 Database:", mongoose.connection.name);
-  })
-  .catch((err) => {
-    console.error("❌ DB connection error:", err.message);
-    console.error("🔧 Check your MONGO_URI environment variable");
-    process.exit(1);
-  });
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch((err) => console.error("❌ DB connection error:", err));
 
 // ======================
 // CORS Setup

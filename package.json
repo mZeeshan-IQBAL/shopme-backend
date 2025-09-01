@@ -1,19 +1,13 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "ShopMe E-commerce Backend API",
+  "description": "",
   "main": "server.js",
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
-  },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js",
-    "build": "npm install --production",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["ecommerce", "api", "backend", "nodejs", "express"],
+  "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
