@@ -5,8 +5,8 @@ const Order = require('../models/order');
 const { protectAdmin } = require('../middleware/protectAdmin');
 const { protectUser } = require('../middleware/protectUser');
 
-// ✅ Reuse the shared transporter (to avoid duplication)
-const transporter = require('../utils/emailTransporter'); // ← Uses same config as forgot-password
+// ✅ Reuse the shared email service (Resend)
+const { sendEmail } = require('../utils/emailTransporter');
 
 // ======================
 // POST: Place new order
@@ -35,28 +35,25 @@ router.post('/', async (req, res) => {
 
   const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // Send confirmation email (if transporter is configured)
-  if (transporter) {
-    try {
-      await transporter.sendMail({
-        from: `"ShopMe" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: `🛍️ Order Confirmed`,
-        html: `
-          <h2>Hello, ${name}!</h2>
-          <p>Your order has been confirmed. Thank you for shopping with us!</p>
-          <p><strong>Total:</strong> ₹${totalPrice.toLocaleString()}</p>
-          <p>📦 Shipping to: ${address}</p>
-          <p>We'll notify you when your order ships.</p>
-        `,
-      });
-      console.log("✅ Order confirmation email sent to", email);
-    } catch (err) {
-      console.error("📧 Failed to send order confirmation email:", err.message);
-      // Continue — don't block order on email failure
-    }
-  } else {
-    console.log("📧 Skipping email: transporter not configured");
+  // Send confirmation email using Resend
+  try {
+    await sendEmail(
+      email,
+      '🛍️ Order Confirmed - ShopMe',
+      `
+        <h2>Hello, ${name}!</h2>
+        <p>Your order has been confirmed. Thank you for shopping with us!</p>
+        <p><strong>Total:</strong> ₹${totalPrice.toLocaleString()}</p>
+        <p>📦 Shipping to: ${address}</p>
+        <p>We'll notify you when your order ships.</p>
+        <br>
+        <p>Thank you for choosing ShopMe!</p>
+      `
+    );
+    console.log("✅ Order confirmation email sent to", email);
+  } catch (err) {
+    console.error("📧 Failed to send order confirmation email:", err.message);
+    // Continue — don't block order on email failure
   }
 
   // Save order to database
@@ -165,24 +162,23 @@ router.patch('/:orderId/status', protectAdmin, async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Optional: Send email to customer
-    if (transporter) {
-      try {
-        await transporter.sendMail({
-          from: `"ShopMe" <${process.env.EMAIL_USER}>`,
-          to: order.email,
-          subject: `🚚 Order Status Updated: ${status}`,
-          html: `
-            <h2>Hello, ${order.name}!</h2>
-            <p>Your order status has been updated to: <strong>${status}</strong></p>
-            <p>Order ID: ${order._id}</p>
-            <p>Visit your profile for details.</p>
-          `,
-        });
-        console.log("📧 Status update email sent to", order.email);
-      } catch (emailErr) {
-        console.error("Failed to send status email:", emailErr.message);
-      }
+    // Send status update email to customer using Resend
+    try {
+      await sendEmail(
+        order.email,
+        `🚚 Order Status Updated: ${status} - ShopMe`,
+        `
+          <h2>Hello, ${order.name}!</h2>
+          <p>Your order status has been updated to: <strong>${status}</strong></p>
+          <p>Order ID: ${order._id}</p>
+          <p>Visit your profile for details.</p>
+          <br>
+          <p>Thank you for choosing ShopMe!</p>
+        `
+      );
+      console.log("📧 Status update email sent to", order.email);
+    } catch (emailErr) {
+      console.error("Failed to send status email:", emailErr.message);
     }
 
     res.json({ message: 'Order status updated', order });
