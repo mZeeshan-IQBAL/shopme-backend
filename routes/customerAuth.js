@@ -4,7 +4,7 @@ const router = express.Router();
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendResetEmail } = require('../utils/emailService'); // Ensure this path is correct
+const { sendResetEmail } = require('../utils/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
 
@@ -26,6 +26,8 @@ router.post('/register', async (req, res) => {
 
     const token = jwt.sign({ id: user._id, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
 
+    console.log("✅ User registered:", user.email);
+
     res.status(201).json({
       token,
       user: {
@@ -36,7 +38,7 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Registration error:', err.message);
+    console.error('❌ Registration error:', err.message);
     res.status(500).json({ error: 'Server error during registration' });
   }
 });
@@ -47,12 +49,20 @@ router.post('/login', async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!user) {
+      console.log("⚠️ Login failed: User not found for", email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
     const isMatch = await user.matchPassword(password);
-    if (!isMatch) return res.status(401).json({ error: 'Invalid credentials' });
+    if (!isMatch) {
+      console.log("⚠️ Login failed: Invalid password for", email);
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
 
     const token = jwt.sign({ id: user._id, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
+
+    console.log("✅ User logged in:", user.email);
 
     res.json({
       token,
@@ -64,7 +74,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('Login error:', err.message);
+    console.error('❌ Login error:', err.message);
     res.status(500).json({ error: 'Server error during login' });
   }
 });
@@ -87,7 +97,7 @@ router.get('/me', async (req, res) => {
     if (err.name === 'JsonWebTokenError') return res.status(401).json({ error: 'Invalid token' });
     if (err.name === 'TokenExpiredError') return res.status(401).json({ error: 'Token expired' });
 
-    console.error('Auth error:', err.message);
+    console.error('❌ Auth error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -99,24 +109,33 @@ router.post('/forgot-password', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      // Don't reveal if email exists
+      console.log("ℹ️ Forgot password: Email not found:", email);
       return res.json({ message: 'If your email is registered, you will receive a reset link.' });
     }
 
     // Generate token
     const token = crypto.randomBytes(32).toString('hex');
-    
-    // Save token and expiry in DB
+    console.log("🔐 Generated reset token for:", email);
+
+    // Save token and expiry
     user.resetPasswordToken = token;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
+    console.log("💾 Reset token saved to DB");
+
     // Send email
-    await sendResetEmail(email, token);
+    try {
+      await sendResetEmail(email, token);
+      console.log("✅ Reset email sent to:", email);
+    } catch (emailError) {
+      console.error("📧 Failed to send reset email:", emailError.message);
+      // Still return success to avoid exposing user existence
+    }
 
     res.json({ message: 'If your email is registered, you will receive a reset link.' });
   } catch (err) {
-    console.error('Forgot password error:', err);
+    console.error('❌ Forgot password error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -133,6 +152,7 @@ router.post('/reset-password/:token', async (req, res) => {
     });
 
     if (!user) {
+      console.log("❌ Invalid or expired reset token:", token);
       return res.status(400).json({ error: 'Password reset token is invalid or has expired.' });
     }
 
@@ -142,9 +162,11 @@ router.post('/reset-password/:token', async (req, res) => {
     user.resetPasswordExpires = undefined;
     await user.save();
 
+    console.log("✅ Password reset successful for:", user.email);
+
     res.json({ message: 'Your password has been reset successfully.' });
   } catch (err) {
-    console.error('Reset password error:', err);
+    console.error('❌ Reset password error:', err.message);
     res.status(500).json({ error: 'Server error' });
   }
 });
