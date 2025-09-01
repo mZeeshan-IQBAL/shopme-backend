@@ -1,16 +1,12 @@
 // backend/utils/emailService.js
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const transporter = require('./emailTransporter');
 
 exports.sendResetEmail = async (email, token) => {
   const resetUrl = `https://shopme-frontend-zeta.vercel.app/reset-password/${token}`;
+
+  if (!transporter) {
+    throw new Error('Email transporter not configured');
+  }
 
   await transporter.sendMail({
     from: `"ShopMe" <${process.env.EMAIL_USER}>`,
