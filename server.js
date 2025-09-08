@@ -3,8 +3,10 @@ require("dotenv").config();
 
 const express = require("express");
 const path = require("path");
-const cors = require("cors");
 const mongoose = require("mongoose");
+
+// Import custom middlewares
+const corsMiddleware = require("./middlewares/corsMiddleware");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,50 +20,24 @@ mongoose
   .catch((err) => console.error("❌ DB connection error:", err));
 
 // ======================
-// CORS Setup
+// Middlewares
 // ======================
-const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(",").map((url) => url.trim())
-  : ["http://localhost:5173", "http://localhost:3000"];
-
-console.log("🌐 Allowed Origins from .env/Default:", allowedOrigins);
+app.use(corsMiddleware); // ✅ Using custom CORS middleware
 
 app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // Allow Postman, curl, mobile apps
-      if (allowedOrigins.includes(origin)) {
-        console.log("✅ Allowed:", origin);
-        callback(null, true);
-      } else {
-        console.log("❌ Blocked by CORS:", origin);
-        callback(new Error("Not allowed by CORS"));
+  express.json({
+    verify: (req, res, buf) => {
+      try {
+        console.log("📥 Raw Body:", buf.toString());
+        JSON.parse(buf.toString());
+      } catch (err) {
+        console.error("❌ Invalid JSON detected:", buf.toString());
+        throw err;
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // ✅ Added "PATCH"
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
 
-// ======================
-// JSON Parser with Debug
-// ======================
-app.use(express.json({
-  verify: (req, res, buf) => {
-    try {
-      console.log("📥 Raw Body:", buf.toString());
-      JSON.parse(buf.toString());
-    } catch (err) {
-      console.error("❌ Invalid JSON detected:", buf.toString());
-      throw err;
-    }
-  }
-}));
-
-// ======================
-// Static Files
-// ======================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ======================
@@ -70,8 +46,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/top-products", require("./routes/topProducts"));
 app.use("/api/orders", require("./routes/orders"));
-app.use('/api/admin', require('./routes/adminAuth'));
-app.use('/api/auth', require('./routes/customerAuth'));
+app.use("/api/admin", require("./routes/adminAuth"));
+app.use("/api/auth", require("./routes/customerAuth"));
 
 // ======================
 // Health Check / Root
@@ -89,13 +65,17 @@ app.get("/", (req, res) => {
 // ======================
 app.use((req, res) => {
   res.status(404).json({
-    message: "Route not found. Check /api/products, /api/top-products, or /api/orders",
+    message:
+      "Route not found. Check /api/products, /api/top-products, or /api/orders",
   });
 });
 
 app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err.stack || err.message);
-  res.status(500).json({ message: "Something went wrong!", error: err.message });
+  res.status(500).json({
+    message: "Something went wrong!",
+    error: err.message,
+  });
 });
 
 // ======================
@@ -109,5 +89,4 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`🔐 Admin Login: /api/admin/login`);
   console.log(`👤 Customer Auth: /api/auth/register, /api/auth/login`);
   console.log(`🖼️ Uploads: /uploads/shirt/shirt.png (example)`);
-  console.log(`🌐 Allowed Origins: ${allowedOrigins.join(", ")}`);
 });
