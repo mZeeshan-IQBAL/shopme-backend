@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 
 // Import custom middlewares
 const corsMiddleware = require("./middlewares/corsMiddleware");
+const jsonLogger = require("./middleware/jsonLogger");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,22 +23,12 @@ mongoose
 // ======================
 // Middlewares
 // ======================
-app.use(corsMiddleware); // ✅ Using custom CORS middleware
+app.use(corsMiddleware); // ✅ CORS handling
+app.use(jsonLogger); // ✅ Custom JSON parser with logging
 
-app.use(
-  express.json({
-    verify: (req, res, buf) => {
-      try {
-        console.log("📥 Raw Body:", buf.toString());
-        JSON.parse(buf.toString());
-      } catch (err) {
-        console.error("❌ Invalid JSON detected:", buf.toString());
-        throw err;
-      }
-    },
-  })
-);
-
+// ======================
+// Static Files
+// ======================
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ======================

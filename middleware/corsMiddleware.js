@@ -1,4 +1,4 @@
-// middlewares/corsMiddleware.js
+// middleware/corsMiddleware.js
 const cors = require("cors");
 
 const allowedOrigins = process.env.CLIENT_URL
